@@ -1,18 +1,20 @@
 import { Client, GatewayIntentBits } from "discord.js";
 import OpenAI from "openai";
 import dotenv from "dotenv";
-dotenv.config();
+
+// โหลดไฟล์ชื่อ _.env
+dotenv.config({ path: "_.env" });
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.MessageContent,
   ],
 });
 
 const ai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 // memory: เก็บประวัติต่อช่อง
@@ -33,13 +35,11 @@ client.on("messageCreate", async (message) => {
   // บันทึกข้อความล่าสุดเข้า memory
   history.push({
     role: "user",
-    content: message.content
+    content: message.content,
   });
 
   // ตัดประวัติให้เหลือ 15 ข้อความล่าสุด
-  if (history.length > 15) {
-    history.shift();
-  }
+  if (history.length > 15) history.shift();
 
   try {
     const response = await ai.chat.completions.create({
@@ -48,9 +48,9 @@ client.on("messageCreate", async (message) => {
         {
           role: "system",
           content:
-            "คุณคือบอท AI พูดจาน่ารัก อบอุ่น อธิบายง่ายๆ ช่วยเหลืออย่างอ่อนโยน ตอบเป็นภาษาไทยได้ดี มีความเป็นเพื่อนที่น่ารักของทุกคนใน Discord."
+            "คุณคือบอท AI พูดจาน่ารัก อบอุ่น อธิบายง่ายๆ ช่วยเหลืออย่างอ่อนโยน ตอบเป็นภาษาไทยได้ดี มีความเป็นเพื่อนที่น่ารักของทุกคนใน Discord.",
         },
-        ...history
+        ...history,
       ],
     });
 
@@ -59,17 +59,17 @@ client.on("messageCreate", async (message) => {
     // เก็บคำตอบลง memory ด้วย เพื่อให้บอทจำสิ่งที่ตัวเองพูด
     history.push({
       role: "assistant",
-      content: reply
+      content: reply,
     });
 
     if (history.length > 15) history.shift();
 
     message.reply(reply);
-
   } catch (err) {
     console.error(err);
     message.reply("เอ๊ะ… เกิดข้อผิดพลาดนิดหน่อย ลองอีกทีได้ไหมน้า 💦");
   }
 });
 
+// login bot
 client.login(process.env.DISCORD_TOKEN);
